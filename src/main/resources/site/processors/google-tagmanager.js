@@ -19,8 +19,11 @@ exports.responseProcessor = function (req, res) {
     bodySnippet += 'height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>';
     bodySnippet += '<!-- End Google Tag Manager (noscript) -->';
 
+    // Check if the users are required to give consent before including Google Tag Manager scripts
+    var isAllowedToIncludeGTM = checkIfAllowedToIncludeGTM(req, siteConfig)
+
     // Only add snippet if in live mode and containerID is set
-    if (req.mode === 'live' && containerID !== '') {
+    if (req.mode === 'live' && containerID !== '' && isAllowedToIncludeGTM) {
 
         var headEnd = res.pageContributions.headEnd;
         if (!headEnd) {
@@ -43,3 +46,16 @@ exports.responseProcessor = function (req, res) {
 
     return res;
 };
+
+function checkIfAllowedToIncludeGTM(req, siteConfig){
+    var isCookieConsentRequired = siteConfig['shouldRequireCookieConsent']
+    if(isCookieConsentRequired) {
+        // Check the cookie, could also be an idea to get this from a cfg file.
+        var COOKIE_KEY = "consentGTM"
+        var consentValue = req.cookies[COOKIE_KEY]
+        return consentValue === "true"
+    } else {
+        // No consent required
+        return true
+    }
+}
